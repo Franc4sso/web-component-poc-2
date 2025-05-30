@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="it">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Anteprima Concept Map</title>
-  <script type="module" src="/concept-map.js"></script> <!-- ← path al tuo JS buildato con Vite -->
+  <script type="module" src="/concept-map.js"></script> <!-- Web Component React -->
   <style>
     body {
       background: #111;
@@ -11,40 +11,142 @@
       font-family: sans-serif;
       padding: 2rem;
     }
+
     button {
       margin-right: 1rem;
       margin-bottom: 1rem;
       padding: 0.5rem 1rem;
     }
+
+    .map-entry {
+      border: 1px solid #555;
+      padding: 1rem;
+      margin: 1rem 0;
+    }
+
+    .lms-note {
+      background: #223;
+      border-left: 4px solid #0af;
+      padding: 1rem;
+      margin: 0.5rem 0;
+      font-style: italic;
+      color: #aaf;
+    }
   </style>
 </head>
+
 <body>
   <h1>Anteprima Concept Map</h1>
 
-  
   <div>
-    <button id="openBtn">Apri Editor</button>
-    <concept-map id="conceptMap" map-id="new"></concept-map>
-    <concept-map map-id="345"></concept-map>
-    <concept-map map-id="680"></concept-map>
+    <button id="createContentBtn">➕ Crea contenuto</button>
+    <div id="mapList"></div>
   </div>
 
   <script>
-    customElements.whenDefined("concept-map").then(() => {
-      const el = document.getElementById("conceptMap");
+    document.addEventListener("DOMContentLoaded", () => {
+      const mapList = document.getElementById("mapList");
+      const contentData = [];
+      let mapCounter = 1000;
+      let noteCounter = 2000;
 
-      document.getElementById("openBtn").addEventListener("click", () => {
-        el.dispatchEvent(new CustomEvent("concept-map:openEditor"));
+      // MOCK iniziale
+      contentData.push(
+        { type: "map", id: "101", timestamp: "00:03:20", title: "Mappa A" },
+        { type: "map", id: "102", timestamp: "00:01:10", title: "Mappa B" },
+        { type: "map", id: "103", timestamp: "00:04:50", title: "Mappa C" }
+      );
+
+      renderContenuti();
+
+      // Pulsante crea contenuto
+      document.getElementById("createContentBtn").addEventListener("click", () => {
+        const type = prompt("Che tipo di contenuto vuoi creare? (mappa / nota)", "mappa")?.toLowerCase();
+        if (!["mappa", "nota"].includes(type)) {
+          alert("Tipo non valido. Scrivi 'mappa' o 'nota'");
+          return;
+        }
+
+        const timestamp = prompt("Inserisci il timestamp (HH:MM:SS)", "00:05:00");
+        if (!/^\d{2}:\d{2}:\d{2}$/.test(timestamp)) {
+          alert("Timestamp non valido.");
+          return;
+        }
+
+        const content = prompt(`Inserisci il titolo della ${type}`, type === "mappa" ? "Nuova mappa" : "Nota del docente");
+        if (!content) {
+          alert("Contenuto vuoto.");
+          return;
+        }
+
+        const id = (type === "mappa" ? `m-${mapCounter++}` : `n-${noteCounter++}`);
+        contentData.push({
+          type: type === "mappa" ? "map" : "note",
+          id,
+          timestamp,
+          ...(type === "mappa" ? { title: content } : { content })
+        });
+
+        renderContenuti();
       });
 
-      document.getElementById("hydrateBtn").addEventListener("click", () => {
-        el.dispatchEvent(new CustomEvent("concept-map:hydrate", {
-          detail: {
-            topic: "Test da anteprima",
-            timestamp: Date.now(),
-          },
-        }));
+      // Toggle editor da pulsante
+      document.body.addEventListener("click", (e) => {
+        const target = e.target;
+        if (target.matches("[data-action='toggle-map']")) {
+          const mapId = target.dataset.mapId;
+          const conceptMapEl = document.querySelector(`concept-map[map-id="${mapId}"]`);
+          if (conceptMapEl) {
+            conceptMapEl.dispatchEvent(new CustomEvent("concept-map:toggleEditor", { bubbles: true }));
+          }
+        }
       });
+
+      function renderContenuti() {
+        mapList.innerHTML = "";
+
+        const ordered = [...contentData].sort(
+          (a, b) => parseTimestamp(a.timestamp) - parseTimestamp(b.timestamp)
+        );
+
+        ordered.forEach(item => {
+          if (item.type === "map") {
+            const wrapper = document.createElement("div");
+            wrapper.className = "map-entry";
+            wrapper.dataset.mapId = item.id;
+
+            const label = document.createElement("p");
+            label.textContent = `🧠 ${item.title} | ${item.timestamp}`;
+
+            const toggleBtn = document.createElement("button");
+            toggleBtn.textContent = "Visualizza mappa";
+            toggleBtn.dataset.action = "toggle-map";
+            toggleBtn.dataset.mapId = item.id;
+
+            const conceptMap = document.createElement("concept-map");
+            conceptMap.setAttribute("map-id", item.id);
+            conceptMap.setAttribute("id", `conceptMap-${item.id}`);
+            conceptMap.setAttribute("data-timestamp", item.timestamp);
+
+            wrapper.appendChild(label);
+            wrapper.appendChild(toggleBtn);
+            wrapper.appendChild(conceptMap);
+            mapList.appendChild(wrapper);
+          }
+
+          if (item.type === "note") {
+            const note = document.createElement("div");
+            note.className = "lms-note";
+            note.textContent = `📝 ${item.content} (${item.timestamp})`;
+            mapList.appendChild(note);
+          }
+        });
+      }
+
+      function parseTimestamp(ts) {
+        const [hh, mm, ss] = ts.split(":").map(Number);
+        return hh * 3600 + mm * 60 + ss;
+      }
     });
   </script>
 </body>

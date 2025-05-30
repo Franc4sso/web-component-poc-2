@@ -1,44 +1,20 @@
-import React, { useEffect, useState, useRef } from "react";
-const ConceptMap = () => {
-  const [showEditor, setShowEditor] = useState(false);
+import React, { useEffect, useState } from "react";
 
-  const [nodes, setNodes] = useState([
-    { id: "1", label: "Concetto iniziale", fx: null, fy: null },
-  ]);
+const ConceptMap = ({ mapId, timestamp, hostElement }) => {
+  const [visible, setVisible] = useState(false);
 
-
+  // Toggle visibilità
   useEffect(() => {
-    const el = document.getElementById("conceptMap");
-    const openEditorHandler = () => setShowEditor(true);
-    el?.addEventListener("concept-map:openEditor", openEditorHandler);
-    return () =>
-      el?.removeEventListener("concept-map:openEditor", openEditorHandler);
-  }, []);
-
-
-  if(!showEditor) {
-    return null;
-  }
+    const toggle = () => setVisible(v => !v);
+    hostElement?.addEventListener("concept-map:toggleEditor", toggle);
+    return () => hostElement?.removeEventListener("concept-map:toggleEditor", toggle);
+  }, [hostElement]);
 
   return (
-    <div
-    >
-      {showEditor && (
-        <>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: "1rem",
-              flexWrap: "wrap",
-              marginBottom: "1rem",
-            }}
-          >
-            <h3>Ho avviato la mappa</h3>
-          </div>  
-        </>
-      )}
+    <div style={{ border: "1px solid #555", padding: "1rem", marginTop: "1rem" }}>
+      <h4>Mappa ID: {mapId}</h4>
+      <p>Timestamp: {timestamp}</p>
+      {visible && <p>Editor attivo</p>}
     </div>
   );
 };
