@@ -2,28 +2,13 @@ import React, { useEffect, useState, useRef } from "react";
 
 const ConceptMap = ({ mapId, timestamp, hostElement }) => {
   const [visible, setVisible] = useState(false);
-  const [loadingToken, setLoadingToken] = useState(false);
+  const [loadingToken, setLoadingToken] = useState(true);
   const [tokenReady, setTokenReady] = useState(false);
   const tokenRef = useRef(null);
 
-  // 🔁 Carica o ricarica JWT da <meta>
-  const loadTokenFromMeta = () => {
-    const jwt = document.querySelector('meta[name="jwt"]')?.getAttribute("content");
-    if (jwt && !jwt.includes("EXPIRED")) {
-      tokenRef.current = jwt;
-      setTokenReady(true);
-      console.log(`[${mapId}] ✅ JWT valido caricato:`, jwt);
-    } else {
-      console.warn(`[${mapId}] 🔒 JWT mancante o scaduto. Richiedo nuovo...`);
-      setLoadingToken(true);
-      setTokenReady(false);
-      window.dispatchEvent(new CustomEvent("jwt:expired", { detail: { source: mapId } }));
-    }
-  };
-
   // 🎯 Setup
   useEffect(() => {
-    loadTokenFromMeta();
+    window.dispatchEvent(new CustomEvent("jwt:request"));
 
     const toggle = () => setVisible(v => !v);
     hostElement?.addEventListener("concept-map:toggleEditor", toggle);
