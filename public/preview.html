@@ -2,67 +2,95 @@
 <html lang="it">
   <head>
     <meta charset="UTF-8" />
-    <meta name="jwt" content="FAKE-JWT-123" />
-    <title>Anteprima Concept Map</title>
-    <script type="module" src="/concept-map.js"></script>
-    <script type="module" src="map-loader.js"></script>
+    <title>Test Mappe</title>
+
+    <script type="module" src="./concept-map.js"></script>
+
     <style>
       body {
-        background: #111;
-        color: #eee;
         font-family: sans-serif;
         padding: 2rem;
+        background: #f8fafc;
       }
-
-      button {
-        margin-right: 1rem;
-        margin-bottom: 1rem;
-        padding: 0.5rem 1rem;
-      }
-
-      [data-cm-type="map"] {
-        border: 1px solid #555;
-        padding: 1rem;
-        margin: 1rem 0;
-      }
-
-      [data-cm-type="note"] {
-        background: #223;
-        border-left: 4px solid #0af;
-        padding: 1rem;
-        margin: 0.5rem 0;
-        font-style: italic;
-        color: #aaf;
-      }
-
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+      .map-section {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-top: 1rem;
+        flex-direction: column;
+        padding-bottom: 10px;
       }
     </style>
   </head>
-
   <body>
-    <h1>Anteprima Concept Map</h1>
-    <button data-cm-action="create">➕ Crea contenuto</button>
-    <button data-cm-action="expire">💣 Simula scadenza JWT</button>
+    <h1 class="text-2xl font-bold text-slate-700 mb-4">Gestione Mappe</h1>
 
-    <!-- Spinner -->
-    <div id="cm-spinner" style="display:none; margin-top:1rem;">
-      <span style="
-        display:inline-block;
-        width:24px;
-        height:24px;
-        border:3px solid #0af;
-        border-top-color: transparent;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-      "></span>
-      <span style="margin-left: 8px;">Verifica accesso in corso...</span>
-    </div>
+    <concept-map-associator id="mapAssociator"></concept-map-associator>
 
-    <div id="lesson-content"></div>
+    <button
+      id="createMapBtn"
+      class="bg-green-600 text-white px-4 py-2 mt-4 rounded hover:bg-green-700"
+    >
+      ➕ Crea nuova mappa
+    </button>
 
+    <div id="map-container" class="map-section mt-4"></div>
 
+    <script>
+      document.cookie = "jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJpZCI6IjEiLCJyb2xlIjoidXNlciIsImV4cCI6MTc0OTU2Mzk4M30.O4hZtl592-r05_4NkoYYiHa4_dimrr6tUZPmeh9GSNjL26-p88Yr8R79_0mzcJwGNi9hOe_UHG8vsie2pDp-P-X6HXDv9EoGLutVot_Ei-6aT9ofkBncA1Mcl0CuCTyyLSIhzzRzPBCjE7ZWkjAT5Qh8vVtR44bj1ETcyRB6toqgdt1eyeMw0ZgSKncnvjkrMjlBzrdWTAnPmDZ8vISBKFApesQVW4bhgrYuH6Aq7JCwW4EQKd-Cafuzm55fj5eWl_esiSPIHHjhrFOPqMMBzLa0YVlQi9QukGTkKd41A5CXkLHprCyZX8nJPe8hHxKO6n3-MZAFDTAAkLMgeCnZPQ path=/";
+
+      window.addEventListener("DOMContentLoaded", async () => {
+        await customElements.whenDefined("concept-map-associator");
+
+        const associator = document.getElementById("mapAssociator");
+        const container = document.getElementById("map-container");
+
+        const renderMaps = (mapsID) => {
+          console.log("Rendering maps:", mapsID);
+          container.innerHTML = "";
+          mapsID.forEach((id) => {
+            const el = document.createElement("concept-map-widget");
+            el.setAttribute("map-id", id);
+            container.appendChild(el);
+          });
+        };
+
+        associator.dispatchEvent(
+          new CustomEvent("getMaps", {
+            detail: { callback: renderMaps },
+            bubbles: true,
+            composed: true,
+          })
+        );
+
+        document
+          .getElementById("createMapBtn")
+          .addEventListener("click", () => {
+            associator.dispatchEvent(
+              new CustomEvent("createMap", {
+                detail: {
+                  name: "Nuova Mappa Interattiva",
+                  indexing_type: "lesson",
+                  teaching_subject: "Fisica Generale",
+                  lesson: "L03_Energia",
+                  lesson_paragraph: "P2_Trasformazioni",
+                  timestamp: "00:04:00",
+                  callback: (newMapId) => {
+                    associator.dispatchEvent(
+                      new CustomEvent("getMaps", {
+                        detail: { callback: renderMaps },
+                        bubbles: true,
+                        composed: true,
+                      })
+                    );
+                  },
+                },
+                bubbles: true,
+                composed: true,
+              })
+            );
+          });
+      });
+    </script>
   </body>
 </html>
